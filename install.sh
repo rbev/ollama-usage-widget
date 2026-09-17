@@ -1,32 +1,39 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-UUID="ollama-usage-widget@rbev"
 SRC_DIR="$(cd "$(dirname "$0")" && pwd)"
-DEST="$HOME/.local/share/gnome-shell/extensions/$UUID"
+APP_DIR="$HOME/.local/share/ollama-usage-widget"
+SERVICE_DIR="$HOME/.config/systemd/user"
+SERVICE="$SERVICE_DIR/ollama-usage-widget.service"
+GJS="$(command -v gjs)" || { echo 'gjs is required' >&2; exit 1; }
 
-echo "Installing Ollama Usage Widget to: $DEST"
+if ! "$GJS" -c "imports.gi.versions.Gtk='3.0'; imports.gi.versions.Soup='3.0'; imports.gi.Gtk; imports.gi.Soup; try { imports.gi.AyatanaAppIndicator3; } catch (e) { imports.gi.AppIndicator3; }"; then
+    echo 'Required GJS libraries are missing; see README.md requirements.' >&2
+    exit 1
+fi
 
-mkdir -p "$(dirname "$DEST")"
-rm -rf "$DEST"
-mkdir -p "$DEST"
-# Copy only extension files — no .git, test, or scripts
-cp "$SRC_DIR/metadata.json" "$SRC_DIR/extension.js" "$SRC_DIR/ollamaClient.js" "$SRC_DIR/README.md" "$DEST/"
+mkdir -p "$APP_DIR" "$SERVICE_DIR"
+cp "$SRC_DIR/indicator.js" "$SRC_DIR/ollamaClient.js" "$APP_DIR/"
+cat > "$SERVICE" <<EOF
+[Unit]
+Description=Ollama usage indicator
+After=graphical-session.target
+PartOf=graphical-session.target
 
-echo "Enabling extension…"
-gnome-extensions enable "$UUID" 2>/dev/null || true
+[Service]
+ExecStart=$GJS -m %h/.local/share/ollama-usage-widget/indicator.js
+Restart=on-failure
 
-cat <<'EOF'
-
-Installed! To activate:
-  - X11:  press Alt+F2, type r, press Enter (restarts GNOME Shell)
-  - Wayland: log out and back in
-
-If you want cloud usage stats, set your Ollama API key:
-  mkdir -p ~/.config/ollama-usage-widget
-  echo -n 'your-api-key-here' > ~/.config/ollama-usage-widget/key
-  chmod 600 ~/.config/ollama-usage-widget/key
-  (or set OLLAMA_API_KEY in your environment)
-
-Get your API key at: https://ollama.com/settings/keys
+[Install]
+WantedBy=graphical-session.target
 EOF
+
+# Remove the previous Shell-extension installation.
+gnome-extensions disable ollama-usage-widget@rbev 2>/dev/null || true
+rm -rf "$HOME/.local/share/gnome-shell/extensions/ollama-usage-widget@rbev"
+
+systemctl --user daemon-reload
+systemctl --user enable --now ollama-usage-widget.service
+
+echo 'Installed and started. No logout required.'
+echo 'Control with: systemctl --user {start|stop|restart|status} ollama-usage-widget'

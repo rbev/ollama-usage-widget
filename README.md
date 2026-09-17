@@ -1,6 +1,6 @@
 # Ollama Usage Widget
 
-A small GNOME Shell extension for Ubuntu's top bar that shows your Ollama server status, running models, and optional cloud subscription usage.
+A small Ubuntu top-bar AppIndicator that shows your Ollama server status, running models, and optional cloud subscription usage. It runs as a user service, so it can be started and stopped without logging out.
 
 ## What it shows
 
@@ -13,38 +13,47 @@ A small GNOME Shell extension for Ubuntu's top bar that shows your Ollama server
 - Cloud session and weekly usage percentages when an API key is configured
 - A link to [ollama.com/settings](https://ollama.com/settings) for the official quota view
 
-## Cloud usage caveat
-
-Ollama has no documented account quota API. This extension uses the undocumented, unversioned `GET https://ollama.com/api/usage` endpoint used by Ollama's dashboard. If it changes, the widget shows “Cloud usage unavailable” and retains the link to the official settings page. See [ollama/ollama#15663](https://github.com/ollama/ollama/issues/15663) and [ollama/ollama#16448](https://github.com/ollama/ollama/issues/16448).
-
-Local server data uses the documented `/api/ps`, `/api/tags`, and `/api/version` endpoints at `localhost:11434`.
-
 ## Requirements
 
-- GNOME Shell 45–48 (Ubuntu 24.04 uses GNOME 46)
+- Ubuntu with AppIndicator support
+- GJS, GTK 3, Soup 3, and AyatanaAppIndicator3
 - Ollama running at `localhost:11434` for local stats
-- An optional Ollama Cloud API key for cloud usage
+
+On Ubuntu, install missing runtime libraries with:
+
+```bash
+sudo apt install gjs gir1.2-gtk-3.0 gir1.2-soup-3.0 gir1.2-ayatanaappindicator3-0.1
+```
 
 ## Install
 
 ```bash
-cd ollama-usage-widget
 ./install.sh
 ```
 
-Restart GNOME Shell afterward: on X11 press `Alt+F2`, enter `r`, and press Enter; on Wayland, log out and back in.
+The indicator starts immediately. Control it with:
+
+```bash
+systemctl --user start ollama-usage-widget
+systemctl --user stop ollama-usage-widget
+systemctl --user restart ollama-usage-widget
+systemctl --user status ollama-usage-widget
+```
 
 ## Configure cloud usage (optional)
 
-Create an API key at <https://ollama.com/settings/keys>, then store it outside the extension:
+Ollama has no documented account quota API. This widget uses the undocumented `GET https://ollama.com/api/usage` endpoint used by Ollama's dashboard. If it changes, the widget shows “Cloud usage unavailable” and retains the official settings link.
+
+Create an API key at <https://ollama.com/settings/keys>, then store it outside the widget:
 
 ```bash
 mkdir -p ~/.config/ollama-usage-widget
 printf %s 'your-api-key-here' > ~/.config/ollama-usage-widget/key
 chmod 600 ~/.config/ollama-usage-widget/key
+systemctl --user restart ollama-usage-widget
 ```
 
-You can instead set `OLLAMA_API_KEY` in GNOME Shell's environment. The extension never logs the key or stores it in extension settings; it sends it only to `https://ollama.com` as a Bearer header.
+You can instead set `OLLAMA_API_KEY` in the service environment.
 
 ## Uninstall
 

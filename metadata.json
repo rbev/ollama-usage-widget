@@ -1,7 +1,0 @@
-{
-  "uuid": "ollama-usage-widget@rbev",
-  "name": "Ollama Usage",
-  "description": "Shows running Ollama models and cloud usage in the top bar.",
-  "shell-version": ["45", "46", "47", "48"],
-  "url": "https://github.com/rbev/ollama-usage-widget"
-}

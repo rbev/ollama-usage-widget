@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-UUID="ollama-usage-widget@rbev"
-DEST="$HOME/.local/share/gnome-shell/extensions/$UUID"
+systemctl --user disable --now ollama-usage-widget.service 2>/dev/null || true
+rm -f "$HOME/.config/systemd/user/ollama-usage-widget.service"
+rm -rf "$HOME/.local/share/ollama-usage-widget"
+# Also clean up installations from the old Shell-extension version.
+gnome-extensions disable ollama-usage-widget@rbev 2>/dev/null || true
+rm -rf "$HOME/.local/share/gnome-shell/extensions/ollama-usage-widget@rbev"
+systemctl --user daemon-reload
 
-echo "Disabling Ollama Usage Widget…"
-gnome-extensions disable "$UUID" 2>/dev/null || true
-
-echo "Removing from: $DEST"
-rm -rf "$DEST"
-
-echo "Done. Restart GNOME Shell (Alt+F2 → r, or log out/in) to clear it from the top bar."
+echo 'Ollama Usage Widget uninstalled.'
