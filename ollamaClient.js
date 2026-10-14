@@ -26,22 +26,25 @@ export function summarizeTags(tagsJson) {
     };
 }
 
-/**
- * Parse the UNOFFICIAL GET https://ollama.com/api/usage response.
- * Returns null on any shape mismatch so callers can degrade gracefully.
- */
-export function parseUsage(usageJson) {
-    if (!usageJson || !usageJson.limits) return null;
-    const { session, weekly } = usageJson.limits;
-    if (!session || !weekly) return null;
-    const sUsage = Number(session.usage);
-    const wUsage = Number(weekly.usage);
-    if (isNaN(sUsage) || isNaN(wUsage)) return null;
+// Convert /api/balance quota remaining into percent used.
+// shortcut: credit-based plans return null; add a credit display when needed.
+export function parseBalance(balanceJson) {
+    if (!balanceJson || typeof balanceJson !== 'object') return null;
+    const included = balanceJson.included;
+    if (!included || typeof included !== 'object') return null;
+    const session = included.session;
+    const weekly = included.weekly;
+    if (!session || !weekly || typeof session !== 'object' || typeof weekly !== 'object')
+        return null;
+    const sRem = session.remaining_percent;
+    const wRem = weekly.remaining_percent;
+    if (typeof sRem !== 'number' || !Number.isFinite(sRem) || sRem < 0 || sRem > 100)
+        return null;
+    if (typeof wRem !== 'number' || !Number.isFinite(wRem) || wRem < 0 || wRem > 100)
+        return null;
     return {
-        sessionPct: Math.round(sUsage * 100),
-        weeklyPct: Math.round(wUsage * 100),
-        sessionModels: (session.models || []).map(m => ({ name: m.name, requests: m.request_count })),
-        weeklyModels: (weekly.models || []).map(m => ({ name: m.name, requests: m.request_count })),
+        sessionPct: Math.round(100 - sRem),
+        weeklyPct: Math.round(100 - wRem),
     };
 }
 

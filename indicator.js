@@ -5,7 +5,7 @@ import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk?version=3.0';
 import Soup from 'gi://Soup?version=3.0';
 
-import {summarizePs, summarizeTags, parseUsage} from './ollamaClient.js';
+import {summarizePs, summarizeTags, parseBalance} from './ollamaClient.js';
 
 let AppIndicator;
 try {
@@ -15,7 +15,7 @@ try {
 }
 
 const LOCAL_URL = 'http://localhost:11434';
-const CLOUD_URL = 'https://ollama.com/api/usage';
+const CLOUD_URL = 'https://ollama.com/api/balance';
 
 Gtk.init(null);
 
@@ -126,7 +126,7 @@ function pollCloud() {
         return;
     }
     fetchJson(CLOUD_URL, {Authorization: `Bearer ${key}`}, data => {
-        const usage = parseUsage(data);
+        const usage = parseBalance(data);
         cloudItem.label = usage
             ? `Cloud: session ${usage.sessionPct}% \u00B7 weekly ${usage.weeklyPct}%`
             : 'Cloud usage unavailable';

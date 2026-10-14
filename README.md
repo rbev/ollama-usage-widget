@@ -10,7 +10,7 @@ A small Ubuntu top-bar AppIndicator that shows your Ollama server status, runnin
 - Server connection status and version
 - Loaded models and their VRAM usage
 - Installed model count
-- Cloud session and weekly usage percentages when an API key is configured
+- Cloud session and weekly usage percentages (e.g. “session 25% · weekly 60%”) when an API key is configured on a legacy/session-weekly plan; newer credit plans currently show as unavailable with a link to the official settings page
 - A link to [ollama.com/settings](https://ollama.com/settings) for the official quota view
 
 ## Requirements
@@ -42,7 +42,7 @@ systemctl --user status ollama-usage-widget
 
 ## Configure cloud usage (optional)
 
-Ollama has no documented account quota API. This widget uses the undocumented `GET https://ollama.com/api/usage` endpoint used by Ollama's dashboard. If it changes, the widget shows “Cloud usage unavailable” and retains the official settings link.
+The widget reads the documented `GET https://ollama.com/api/balance` endpoint (using your existing Bearer API key; see <https://docs.ollama.com/api/balance>). Legacy/session-weekly plans report remaining quota as `included.session.remaining_percent` and `included.weekly.remaining_percent` (0..100, *remaining*); the widget displays the *used* percentage (`100 - remaining_percent`, rounded) as “Cloud: session N% · weekly N%”. Newer credit plans instead report `included.{balance_usd,allowance_usd,period}` without session/weekly windows, which is outside this widget's quota display, so those accounts show “Cloud usage unavailable” while retaining the official [ollama.com/settings](https://ollama.com/settings) link. If the response shape is unrecognised the widget also falls back to “Cloud usage unavailable”.
 
 Create an API key at <https://ollama.com/settings/keys>, then store it outside the widget:
 
